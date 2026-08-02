@@ -85,8 +85,10 @@
   .cal-events{display:flex;flex-direction:column;gap:2px;}
   .cal-event{
     font-size:9.5px;font-weight:600;padding:2px 4px;border-radius:4px;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;
+    cursor:pointer;display:flex;align-items:center;gap:3px;
   }
+  .cal-event-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1;}
+  .cal-event-rate{flex-shrink:0;font-weight:700;}
   .cal-event-more{font-size:9.5px;color:var(--text-dim);padding:1px 4px;cursor:pointer;}
   .day-job-list .job-card{margin-bottom:8px;}
   .fab{
@@ -415,6 +417,7 @@ function renderDashboard(app){
   const todayStrVal = todayStr();
 
   const jobsByDate = {};
+  const jobRateInfo = {};
   jobs.forEach(job=>{
     const dates = new Set();
     if(job.dateScheduled) dates.add(job.dateScheduled);
@@ -422,6 +425,13 @@ function renderDashboard(app){
     dates.forEach(d=>{
       (jobsByDate[d] = jobsByDate[d] || []).push(job);
     });
+    const a = calcActuals(job, settings);
+    if(a.effectiveHourly !== null){
+      let cls = 'bad';
+      if(a.effectiveHourly >= a.targetHourly) cls = 'good';
+      else if(a.effectiveHourly >= 30) cls = 'amber';
+      jobRateInfo[job.id] = { rate: a.effectiveHourly, cls };
+    }
   });
 
   const firstOfMonth = new Date(year, month, 1);
@@ -448,7 +458,13 @@ function renderDashboard(app){
         <div class="cal-events">
           ${visible.map(job=>{
             const li = jobLabelInfo(job.label) || { bg:'#3a3f47', color:'#c7ced8' };
-            return `<div class="cal-event" style="background:${li.bg};color:${li.color};" data-job-id="${job.id}">${escapeHtml(job.jobTitle || job.clientName || job.name || 'Job')}</div>`;
+            const ri = jobRateInfo[job.id];
+            const rateColorVar = ri ? (ri.cls === 'good' ? 'var(--good)' : ri.cls === 'amber' ? 'var(--accent)' : 'var(--bad)') : '';
+            const rateHtml = ri ? `<span class="cal-event-rate" style="color:${rateColorVar};">£${Math.round(ri.rate)}</span>` : '';
+            return `<div class="cal-event" style="background:${li.bg};" data-job-id="${job.id}">
+              <span class="cal-event-name" style="color:${li.color};">${escapeHtml(job.jobTitle || job.clientName || job.name || 'Job')}</span>
+              ${rateHtml}
+            </div>`;
           }).join('')}
           ${overflow > 0 ? `<div class="cal-event-more" data-date="${cellDateStr}">+${overflow} more</div>` : ''}
         </div>
