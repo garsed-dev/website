@@ -87,10 +87,6 @@
     font-size:9.5px;font-weight:600;padding:2px 4px;border-radius:4px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;
   }
-  .cal-event-quoted{background:#3a3f47;color:#c7ced8;}
-  .cal-event-scheduled{background:#1d3a57;color:var(--blue);}
-  .cal-event-in_progress{background:#4a3a1e;color:var(--accent);}
-  .cal-event-complete{background:#1e4a38;color:var(--good);}
   .cal-event-more{font-size:9.5px;color:var(--text-dim);padding:1px 4px;cursor:pointer;}
   .day-job-list .job-card{margin-bottom:8px;}
   .fab{
@@ -377,6 +373,8 @@ function renderJobCard(job, settings){
   } else {
     profitHtml = `<span class="profit-pill" style="color:var(--text-dim)">Not started</span>`;
   }
+  const labelInfo = jobLabelInfo(job.label);
+  const labelBadgeHtml = labelInfo ? `<span class="badge" style="background:${labelInfo.bg};color:${labelInfo.color};">${escapeHtml(labelInfo.text)}</span>` : '';
   card.innerHTML = `
     <div class="job-top">
       <div>
@@ -384,7 +382,10 @@ function renderJobCard(job, settings){
         ${job.jobTitle ? `<div class="job-meta">${escapeHtml(job.jobTitle)}</div>` : ''}
         <div class="job-meta">${[escapeHtml(job.address||''), job.dateScheduled ? fmtDate(job.dateScheduled) : ''].filter(Boolean).join(' · ')}</div>
       </div>
-      <span class="badge badge-${job.status}">${statusLabel(job.status)}</span>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+        <span class="badge badge-${job.status}">${statusLabel(job.status)}</span>
+        ${labelBadgeHtml}
+      </div>
     </div>
     <div class="job-bottom">
       <span style="font-size:13px;color:var(--text-dim)">Quoted ${money(quotedTotal)}</span>
@@ -441,7 +442,10 @@ function renderDashboard(app){
       <div class="cal-cell ${inMonth?'':'other-month'} ${isToday?'today':''}">
         <div class="cal-daynum">${d.getDate()}</div>
         <div class="cal-events">
-          ${visible.map(job=>`<div class="cal-event cal-event-${job.status}" data-job-id="${job.id}">${escapeHtml(job.clientName || job.name || 'Job')}</div>`).join('')}
+          ${visible.map(job=>{
+            const li = jobLabelInfo(job.label) || { bg:'#3a3f47', color:'#c7ced8' };
+            return `<div class="cal-event" style="background:${li.bg};color:${li.color};" data-job-id="${job.id}">${escapeHtml(job.clientName || job.name || 'Job')}</div>`;
+          }).join('')}
           ${overflow > 0 ? `<div class="cal-event-more" data-date="${cellDateStr}">+${overflow} more</div>` : ''}
         </div>
       </div>
@@ -519,6 +523,16 @@ function statusLabel(s){
   return {quoted:'Quoted', scheduled:'Scheduled', in_progress:'In Progress', complete:'Complete'}[s] || s;
 }
 
+const JOB_LABELS = {
+  commercial_pv: { text: 'Commercial PV', bg: '#1d3a57', color: '#4d9fec' },
+  domestic_pv:   { text: 'Domestic PV',   bg: '#123c38', color: '#34d0c0' },
+  fault_finding: { text: 'Fault Finding', bg: '#332154', color: '#a78bfa' },
+  house_bashing: { text: 'House Bashing', bg: '#4a3a1e', color: '#e8a13c' },
+};
+function jobLabelInfo(label){
+  return JOB_LABELS[label] || null;
+}
+
 function escapeHtml(str){
   const d = document.createElement('div');
   d.textContent = str||'';
@@ -538,6 +552,12 @@ function renderJobForm(app){
     <div class="card">
       <div class="field"><label>Client</label><input id="f-clientname" value="${escapeHtml(job.clientName || job.name || '')}" placeholder="e.g. Mr Smith"></div>
       <div class="field"><label>Job</label><input id="f-jobtitle" value="${escapeHtml(job.jobTitle||'')}" placeholder="e.g. Full rewire"></div>
+      <div class="field"><label>Label</label>
+        <select id="f-label">
+          <option value="" ${!job.label?'selected':''}>— No label —</option>
+          ${Object.keys(JOB_LABELS).map(key=>`<option value="${key}" ${job.label===key?'selected':''}>${JOB_LABELS[key].text}</option>`).join('')}
+        </select>
+      </div>
       <div class="field autocomplete">
         <label>Address</label>
         <input id="f-address" value="${escapeHtml(job.address)}" placeholder="Start typing an address, postcode or place name..." autocomplete="off">
@@ -621,6 +641,7 @@ function renderJobForm(app){
     const updated = Object.assign({}, job, {
       clientName,
       jobTitle: document.getElementById('f-jobtitle').value.trim(),
+      label: document.getElementById('f-label').value,
       address: document.getElementById('f-address').value.trim(),
       dateScheduled: document.getElementById('f-date').value,
       status: document.getElementById('f-status').value,
@@ -688,6 +709,8 @@ function renderJobDetail(app, job){
     ? `<div class="stat"><div class="label">Price needed for ${money(settings.targetHourlyRate)}/hr</div><div class="value">—</div></div>`
     : `<div class="stat"><div class="label">Price needed for ${money(settings.targetHourlyRate)}/hr</div><div class="value">${money(a.priceForTargetHourly)}</div></div>`;
 
+  const detailLabelInfo = jobLabelInfo(job.label);
+  const detailLabelBadgeHtml = detailLabelInfo ? `<span class="badge" style="background:${detailLabelInfo.bg};color:${detailLabelInfo.color};">${escapeHtml(detailLabelInfo.text)}</span>` : '';
   app.innerHTML = `
     <div class="card">
       <div class="job-top">
@@ -695,7 +718,10 @@ function renderJobDetail(app, job){
           <div class="job-meta">${escapeHtml(job.address||'')}</div>
           <div class="job-meta">${job.dateScheduled ? fmtDate(job.dateScheduled) : ''}</div>
         </div>
-        <span class="badge badge-${job.status}">${statusLabel(job.status)}</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+          <span class="badge badge-${job.status}">${statusLabel(job.status)}</span>
+          ${detailLabelBadgeHtml}
+        </div>
       </div>
       ${job.notes ? `<div class="job-meta" style="margin-top:8px;">${escapeHtml(job.notes)}</div>` : ''}
       <button class="btn btn-secondary" id="editJobBtn" style="margin-top:12px;">Edit job details</button>
