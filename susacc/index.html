@@ -1,0 +1,1370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Job Profit Tracker</title>
+<style>
+  :root{
+    --bg:#12161c;
+    --card:#1b212b;
+    --card2:#232b37;
+    --border:#2c3542;
+    --text:#eef1f5;
+    --text-dim:#9aa7b8;
+    --accent:#e8a13c;
+    --accent-dim:#4a3a1e;
+    --good:#3ecf8e;
+    --bad:#e05c5c;
+    --blue:#4d9fec;
+    --grey:#6b7684;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding-bottom:90px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  header{
+    position:sticky;top:0;z-index:10;
+    background:var(--bg);
+    padding:16px 16px 10px;
+    border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  header h1{font-size:19px;margin:0;font-weight:700;}
+  header .icon-btn{background:none;border:none;color:var(--text-dim);font-size:22px;padding:4px 8px;cursor:pointer;}
+  main{padding:14px;max-width:640px;margin:0 auto;}
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin-bottom:12px;
+  }
+  .job-card{display:block;width:100%;text-align:left;cursor:pointer;}
+  .job-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .job-name{font-weight:700;font-size:16px;}
+  .job-meta{color:var(--text-dim);font-size:13px;margin-top:2px;}
+  .badge{
+    font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+    padding:3px 8px;border-radius:20px;white-space:nowrap;
+  }
+  .badge-quoted{background:#3a3f47;color:#c7ced8;}
+  .badge-scheduled{background:#1d3a57;color:var(--blue);}
+  .badge-in_progress{background:#4a3a1e;color:var(--accent);}
+  .badge-complete{background:#1e4a38;color:var(--good);}
+  .job-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
+  .profit-pill{font-size:13px;font-weight:700;}
+  .profit-good{color:var(--good);}
+  .profit-bad{color:var(--bad);}
+  .rate-pill{font-size:12px;font-weight:700;padding:2px 7px;border-radius:20px;}
+  .rate-green{color:var(--good);background:#1e4a38;}
+  .rate-amber{color:var(--accent);background:#4a3a1e;}
+  .rate-red{color:var(--bad);background:#3a2020;}
+  .empty{color:var(--text-dim);text-align:center;padding:40px 20px;font-size:14px;}
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .cal-nav-btn{background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:18px;width:38px;height:38px;border-radius:10px;cursor:pointer;line-height:1;}
+  .cal-month-label{font-size:16px;font-weight:700;}
+  .cal-today-btn{display:block;margin:0 auto 12px;background:none;border:none;color:var(--blue);font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;}
+  .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;}
+  .cal-weekdays div{text-align:center;font-size:11px;color:var(--text-dim);font-weight:600;text-transform:uppercase;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-cell{
+    background:var(--card);border:1px solid var(--border);border-radius:8px;
+    min-height:64px;padding:3px;overflow:hidden;
+  }
+  .cal-cell.other-month{opacity:.35;}
+  .cal-cell.today{border-color:var(--accent);border-width:2px;padding:2px;}
+  .cal-daynum{font-size:11px;color:var(--text-dim);padding:1px 2px;}
+  .cal-cell.today .cal-daynum{color:var(--accent);font-weight:700;}
+  .cal-events{display:flex;flex-direction:column;gap:2px;}
+  .cal-event{
+    font-size:9.5px;font-weight:600;padding:2px 4px;border-radius:4px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;
+  }
+  .cal-event-quoted{background:#3a3f47;color:#c7ced8;}
+  .cal-event-scheduled{background:#1d3a57;color:var(--blue);}
+  .cal-event-in_progress{background:#4a3a1e;color:var(--accent);}
+  .cal-event-complete{background:#1e4a38;color:var(--good);}
+  .cal-event-more{font-size:9.5px;color:var(--text-dim);padding:1px 4px;cursor:pointer;}
+  .day-job-list .job-card{margin-bottom:8px;}
+  .fab{
+    position:fixed;bottom:22px;right:20px;
+    background:var(--accent);color:#1a1300;
+    border:none;border-radius:50px;
+    padding:14px 22px;font-size:15px;font-weight:700;
+    box-shadow:0 6px 18px rgba(0,0,0,.4);
+    cursor:pointer;
+  }
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13px;color:var(--text-dim);margin-bottom:6px;font-weight:600;}
+  input,select,textarea{
+    width:100%;
+    background:var(--card2);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:10px;
+    padding:12px 12px;
+    font-size:16px;
+    font-family:inherit;
+  }
+  textarea{resize:vertical;min-height:60px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  .btn{
+    display:block;width:100%;text-align:center;
+    background:var(--accent);color:#1a1300;
+    border:none;border-radius:10px;
+    padding:13px;font-size:15px;font-weight:700;
+    cursor:pointer;margin-top:6px;
+  }
+  .btn-secondary{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+  .btn-danger{background:#3a2020;color:var(--bad);border:1px solid #5a2c2c;}
+  .btn-good{background:var(--good);color:#06281a;}
+  .btn-row{display:flex;gap:10px;}
+  .btn-row .btn{flex:1;}
+  .backbar{display:flex;align-items:center;gap:10px;}
+  .backbar button{background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:4px 6px 4px 0;}
+  .section-title{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-dim);font-weight:700;margin:20px 0 8px;}
+  .section-title:first-child{margin-top:0;}
+  .kv{display:flex;justify-content:space-between;padding:7px 0;font-size:14.5px;border-bottom:1px solid var(--border);}
+  .kv:last-child{border-bottom:none;}
+  .kv .k{color:var(--text-dim);}
+  .kv .v{font-weight:600;}
+  .kv.total .v{color:var(--accent);font-size:17px;}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .stat{background:var(--card2);border-radius:10px;padding:12px;}
+  .stat .label{font-size:12px;color:var(--text-dim);margin-bottom:4px;}
+  .stat .value{font-size:18px;font-weight:700;}
+  .stat .value.good{color:var(--good);}
+  .stat .value.amber{color:var(--accent);}
+  .stat .value.bad{color:var(--bad);}
+  .log-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 0;border-bottom:1px solid var(--border);
+  }
+  .log-row:last-child{border-bottom:none;}
+  .log-left .date{font-weight:700;font-size:14px;}
+  .log-left .times{color:var(--text-dim);font-size:13px;margin-top:2px;}
+  .log-right{text-align:right;font-size:13px;color:var(--text-dim);display:flex;align-items:center;gap:10px;}
+  .log-right .hrs{color:var(--text);font-weight:700;}
+  .icon-x{background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:2px 4px;}
+  .mat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;}
+  .mat-row:last-child{border-bottom:none;}
+  .mat-row .desc{flex:1;}
+  .mat-row .cost{font-weight:600;margin-right:8px;}
+  .hint{font-size:12.5px;color:var(--text-dim);margin-top:-6px;margin-bottom:14px;}
+  .hidden{display:none !important;}
+  a{color:var(--blue);}
+  .autocomplete{position:relative;}
+  .autocomplete-list{
+    position:absolute;left:0;right:0;top:calc(100% + 4px);
+    background:var(--card2);border:1px solid var(--border);border-radius:10px;
+    max-height:220px;overflow-y:auto;z-index:20;
+    box-shadow:0 8px 20px rgba(0,0,0,.4);
+  }
+  .autocomplete-item{
+    padding:11px 12px;font-size:14px;cursor:pointer;
+    border-bottom:1px solid var(--border);
+  }
+  .autocomplete-item:last-child{border-bottom:none;}
+  .autocomplete-item:active,.autocomplete-item:hover{background:var(--card);}
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.55);
+    display:flex;align-items:flex-end;justify-content:center;
+    z-index:100;
+  }
+  .modal-sheet{
+    background:var(--card);border:1px solid var(--border);
+    border-radius:18px 18px 0 0;
+    padding:18px 16px calc(18px + env(safe-area-inset-bottom));
+    width:100%;max-width:640px;max-height:88vh;overflow-y:auto;
+  }
+  .modal-sheet h2{margin:0 0 14px;font-size:17px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="backbar" id="headerLeft"><h1 id="pageTitle">Jobs</h1></div>
+  <button class="icon-btn" id="settingsBtn" title="Settings">&#9881;</button>
+</header>
+
+<main id="app"></main>
+
+<button class="fab hidden" id="fabAddJob">+ New Job</button>
+
+<div id="modalRoot"></div>
+
+<script>
+const STORAGE_JOBS = 'jpt_jobs';
+const STORAGE_SETTINGS = 'jpt_settings';
+const STORAGE_FB_CONFIG = 'jpt_fb_config';
+// Safe to make public — Firebase client config values are identifiers, not secrets.
+window.EMBEDDED_FB_CONFIG = {
+  apiKey: "AIzaSyD7KzmmgNmMcMKAVtfIZwI1HDMOBTehSlc",
+  authDomain: "susacc-824bb.firebaseapp.com",
+  projectId: "susacc-824bb",
+  storageBucket: "susacc-824bb.firebasestorage.app",
+  messagingSenderId: "247441960169",
+  appId: "1:247441960169:web:66316fc031e2054a4d9478"
+};
+
+const defaultSettings = { dayRate: 350, hoursPerDay: 8, mileageRate: 0.60, markup: 10, insurance: 25, googleApiKey: '', homeBaseAddress: 'BS31 1XJ', targetHourlyRate: 45 };
+
+window.__cachedJobs = [];
+window.__cachedSettings = {};
+
+function loadSettings(){
+  return Object.assign({}, defaultSettings, window.__cachedSettings);
+}
+function saveSettings(s){
+  window.__cachedSettings = s;
+  if(window.fbSaveSettings) window.fbSaveSettings(s);
+}
+
+function loadJobs(){
+  return window.__cachedJobs;
+}
+function saveJobs(jobs){
+  window.__cachedJobs = jobs;
+  if(window.fbSaveJobs) window.fbSaveJobs(jobs);
+}
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+function money(n){
+  n = Number(n)||0;
+  return '£' + n.toLocaleString('en-GB', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function moneyShort(n){
+  n = Number(n)||0;
+  return '£' + n.toLocaleString('en-GB', {minimumFractionDigits:0, maximumFractionDigits:0});
+}
+function fmtDate(d){
+  if(!d) return '';
+  const dt = new Date(d+'T00:00:00');
+  return dt.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'});
+}
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function nowTimeStr(){
+  const d = new Date();
+  return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function hoursBetween(leave, home){
+  if(!leave || !home) return 0;
+  const [lh,lm] = leave.split(':').map(Number);
+  const [hh,hm] = home.split(':').map(Number);
+  let mins = (hh*60+hm) - (lh*60+lm);
+  if(mins < 0) mins += 24*60;
+  return mins/60;
+}
+
+let state = { view:'fbLoading', jobId:null, editingJob:null, calendarYear:null, calendarMonth:null };
+window.appState = state;
+
+function calcQuote(q){
+  const materialsPrice = (Number(q.materialsCostEst)||0) * (1 + (Number(q.markup)||0)/100);
+  const labourPrice = (Number(q.dayRate)||0) * (Number(q.estDays)||0);
+  const subtotal = materialsPrice + labourPrice + (Number(q.insurance)||0);
+  return { materialsPrice, labourPrice, subtotal };
+}
+
+function calcActuals(job, settings){
+  const logs = job.logs || [];
+  const totalHours = logs.reduce((s,l)=> s + hoursBetween(l.leave,l.home), 0);
+  const totalMiles = logs.reduce((s,l)=> s + (Number(l.miles)||0), 0);
+  const fuelCost = totalMiles * (Number(settings.mileageRate)||0);
+  const actualMaterials = (job.materialLines||[]).reduce((s,m)=> s + (Number(m.cost)||0), 0);
+  const totalActualCost = actualMaterials + fuelCost;
+  const quotedTotal = Number(job.quotedTotal)||0;
+  const grossProfit = quotedTotal - totalActualCost;
+  const targetHourly = (Number(settings.dayRate)||0) / (Number(settings.hoursPerDay)||8);
+  const daysLogged = new Set(logs.map(l=>l.date)).size;
+  const commuteMinutesEachWay = job.commuteMinutes != null ? Number(job.commuteMinutes)||0 : 30;
+  const commuteHoursDeducted = (commuteMinutesEachWay * 2 / 60) * daysLogged;
+  const billableHours = Math.max(0, totalHours - commuteHoursDeducted);
+  const effectiveHourly = billableHours > 0 ? grossProfit/billableHours : null;
+  const priceForTargetHourly = billableHours > 0 ? totalActualCost + billableHours * (Number(settings.targetHourlyRate)||0) : null;
+  return { totalHours, totalMiles, fuelCost, actualMaterials, totalActualCost, grossProfit, effectiveHourly, targetHourly, daysLogged, priceForTargetHourly, commuteMinutesEachWay, commuteHoursDeducted, billableHours };
+}
+
+let lastRenderedView = null;
+function render(){
+  const app = document.getElementById('app');
+  const fab = document.getElementById('fabAddJob');
+  const title = document.getElementById('pageTitle');
+  const headerLeft = document.getElementById('headerLeft');
+  if(state.view !== lastRenderedView){
+    document.getElementById('modalRoot').innerHTML = '';
+  }
+  lastRenderedView = state.view;
+  fab.classList.add('hidden');
+  headerLeft.innerHTML = '';
+
+  if(state.view === 'fbLoading'){
+    title.textContent = 'Job Profit Tracker';
+    headerLeft.appendChild(title);
+    app.innerHTML = '<div class="empty">Loading…</div>';
+  } else if(state.view === 'fbSetup'){
+    title.textContent = 'Connect Cloud Storage';
+    headerLeft.appendChild(title);
+    renderFirebaseSetup(app);
+  } else if(state.view === 'authLogin'){
+    title.textContent = 'Sign In';
+    headerLeft.appendChild(title);
+    renderAuthScreen(app);
+  } else if(state.view === 'dashboard'){
+    title.textContent = 'Jobs';
+    headerLeft.appendChild(title);
+    fab.classList.remove('hidden');
+    renderDashboard(app);
+  } else if(state.view === 'jobForm'){
+    title.textContent = state.editingJob ? 'Edit Job' : 'New Job';
+    renderBackHeader(headerLeft, title, ()=>{ state.view = state.editingJob ? 'jobDetail' : 'dashboard'; state.jobId = state.editingJob ? state.editingJob.id : null; render(); });
+    renderJobForm(app);
+  } else if(state.view === 'jobDetail'){
+    const job = loadJobs().find(j=>j.id===state.jobId);
+    if(!job){ state.view='dashboard'; render(); return; }
+    title.textContent = displayName(job);
+    renderBackHeader(headerLeft, title, ()=>{ state.view='dashboard'; render(); });
+    renderJobDetail(app, job);
+  } else if(state.view === 'settings'){
+    title.textContent = 'Settings';
+    renderBackHeader(headerLeft, title, ()=>{ state.view='dashboard'; render(); });
+    renderSettings(app);
+  }
+}
+
+function renderBackHeader(headerLeft, title, onBack){
+  const btn = document.createElement('button');
+  btn.innerHTML = '&#8592;';
+  btn.onclick = onBack;
+  headerLeft.appendChild(btn);
+  headerLeft.appendChild(title);
+}
+
+function renderJobCard(job, settings){
+  const { subtotal } = calcQuote(job);
+  const quotedTotal = Number(job.quotedTotal)||subtotal;
+  const a = calcActuals(job, settings);
+  const hasLogs = (job.logs||[]).length > 0;
+
+  const card = document.createElement('button');
+  card.className = 'card job-card';
+  let profitHtml = '';
+  let rateHtml = '';
+  if(hasLogs){
+    const cls = a.grossProfit >= 0 ? 'profit-good' : 'profit-bad';
+    profitHtml = `<span class="profit-pill ${cls}">${money(a.grossProfit)} profit</span>`;
+    if(a.effectiveHourly !== null){
+      let rateCls = 'rate-red';
+      if(a.effectiveHourly >= a.targetHourly) rateCls = 'rate-green';
+      else if(a.effectiveHourly >= 30) rateCls = 'rate-amber';
+      rateHtml = `<span class="rate-pill ${rateCls}">${money(a.effectiveHourly)}/hr</span>`;
+    }
+  } else {
+    profitHtml = `<span class="profit-pill" style="color:var(--text-dim)">Not started</span>`;
+  }
+  card.innerHTML = `
+    <div class="job-top">
+      <div>
+        <div class="job-name">${escapeHtml(job.clientName || job.name || 'Untitled job')}</div>
+        ${job.jobTitle ? `<div class="job-meta">${escapeHtml(job.jobTitle)}</div>` : ''}
+        <div class="job-meta">${[escapeHtml(job.address||''), job.dateScheduled ? fmtDate(job.dateScheduled) : ''].filter(Boolean).join(' · ')}</div>
+      </div>
+      <span class="badge badge-${job.status}">${statusLabel(job.status)}</span>
+    </div>
+    <div class="job-bottom">
+      <span style="font-size:13px;color:var(--text-dim)">Quoted ${money(quotedTotal)}</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${rateHtml}
+        ${profitHtml}
+      </div>
+    </div>
+  `;
+  card.onclick = ()=>{ state.view='jobDetail'; state.jobId=job.id; render(); };
+  return card;
+}
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+function dateStrOf(y,m,d){ return y+'-'+pad2(m+1)+'-'+pad2(d); }
+
+function renderDashboard(app){
+  const jobs = loadJobs();
+  const settings = loadSettings();
+  const today = new Date();
+  if(state.calendarYear == null){
+    state.calendarYear = today.getFullYear();
+    state.calendarMonth = today.getMonth();
+  }
+  const year = state.calendarYear;
+  const month = state.calendarMonth;
+  const todayStrVal = todayStr();
+
+  const jobsByDate = {};
+  jobs.forEach(job=>{
+    if(!job.dateScheduled) return;
+    (jobsByDate[job.dateScheduled] = jobsByDate[job.dateScheduled] || []).push(job);
+  });
+
+  const firstOfMonth = new Date(year, month, 1);
+  const startOffset = (firstOfMonth.getDay() + 6) % 7; // Monday-start
+  const gridStart = new Date(year, month, 1 - startOffset);
+  const monthLabel = firstOfMonth.toLocaleDateString('en-GB', { month:'long', year:'numeric' });
+  const isCurrentRealMonth = year === today.getFullYear() && month === today.getMonth();
+  const maxVisible = 2;
+
+  let cellsHtml = '';
+  for(let i=0;i<42;i++){
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate()+i);
+    const cellDateStr = dateStrOf(d.getFullYear(), d.getMonth(), d.getDate());
+    const inMonth = d.getMonth() === month;
+    const isToday = cellDateStr === todayStrVal;
+    const dayJobs = jobsByDate[cellDateStr] || [];
+    const visible = dayJobs.slice(0, maxVisible);
+    const overflow = dayJobs.length - visible.length;
+
+    cellsHtml += `
+      <div class="cal-cell ${inMonth?'':'other-month'} ${isToday?'today':''}">
+        <div class="cal-daynum">${d.getDate()}</div>
+        <div class="cal-events">
+          ${visible.map(job=>`<div class="cal-event cal-event-${job.status}" data-job-id="${job.id}">${escapeHtml(job.clientName || job.name || 'Job')}</div>`).join('')}
+          ${overflow > 0 ? `<div class="cal-event-more" data-date="${cellDateStr}">+${overflow} more</div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  app.innerHTML = `
+    <div class="cal-nav">
+      <button class="cal-nav-btn" id="calPrev">&#8249;</button>
+      <div class="cal-month-label">${monthLabel}</div>
+      <button class="cal-nav-btn" id="calNext">&#8250;</button>
+    </div>
+    ${!isCurrentRealMonth ? '<button class="cal-today-btn" id="calToday">Today</button>' : ''}
+    <div class="cal-weekdays">
+      <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+    </div>
+    <div class="cal-grid">${cellsHtml}</div>
+    ${jobs.length === 0 ? '<div class="empty">No jobs yet.<br>Tap "+ New Job" to price up your first one.</div>' : ''}
+  `;
+
+  document.getElementById('calPrev').onclick = ()=>{
+    state.calendarMonth--;
+    if(state.calendarMonth < 0){ state.calendarMonth = 11; state.calendarYear--; }
+    render();
+  };
+  document.getElementById('calNext').onclick = ()=>{
+    state.calendarMonth++;
+    if(state.calendarMonth > 11){ state.calendarMonth = 0; state.calendarYear++; }
+    render();
+  };
+  const calToday = document.getElementById('calToday');
+  if(calToday) calToday.onclick = ()=>{
+    state.calendarYear = today.getFullYear();
+    state.calendarMonth = today.getMonth();
+    render();
+  };
+  app.querySelectorAll('.cal-event').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.view = 'jobDetail';
+      state.jobId = el.dataset.jobId;
+      render();
+    });
+  });
+  app.querySelectorAll('.cal-event-more').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      showDayJobs(el.dataset.date, jobsByDate[el.dataset.date] || [], settings);
+    });
+  });
+}
+
+function showDayJobs(dateStr, dayJobs, settings){
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-sheet">
+        <h2>${fmtDate(dateStr)}</h2>
+        <div class="day-job-list" id="dayJobList"></div>
+        <button class="btn btn-secondary" id="modalCancel">Close</button>
+      </div>
+    </div>
+  `;
+  const listEl = document.getElementById('dayJobList');
+  dayJobs.forEach(job=> listEl.appendChild(renderJobCard(job, settings)));
+  const overlay = document.getElementById('modalOverlay');
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) root.innerHTML=''; });
+  document.getElementById('modalCancel').onclick = ()=>{ root.innerHTML=''; };
+}
+
+function displayName(job){
+  const client = job.clientName || job.name || 'Untitled job';
+  return job.jobTitle ? client + ' — ' + job.jobTitle : client;
+}
+
+function statusLabel(s){
+  return {quoted:'Quoted', scheduled:'Scheduled', in_progress:'In Progress', complete:'Complete'}[s] || s;
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str||'';
+  return d.innerHTML;
+}
+
+function renderJobForm(app){
+  const settings = loadSettings();
+  const job = state.editingJob || {
+    id: uid(), clientName:'', jobTitle:'', address:'', dateScheduled: todayStr(), status:'quoted',
+    materialsCostEst:'', markup: settings.markup, dayRate: settings.dayRate, estDays:'',
+    insurance: settings.insurance, quotedTotal:'', notes:'', materialLines:[], logs:[]
+  };
+
+  app.innerHTML = `
+    <div class="section-title">Job Details</div>
+    <div class="card">
+      <div class="field"><label>Client</label><input id="f-clientname" value="${escapeHtml(job.clientName || job.name || '')}" placeholder="e.g. Mr Smith"></div>
+      <div class="field"><label>Job</label><input id="f-jobtitle" value="${escapeHtml(job.jobTitle||'')}" placeholder="e.g. Full rewire"></div>
+      <div class="field autocomplete">
+        <label>Address</label>
+        <input id="f-address" value="${escapeHtml(job.address)}" placeholder="Start typing an address, postcode or place name..." autocomplete="off">
+        <div id="f-address-list" class="autocomplete-list hidden"></div>
+        <div id="f-address-hint" class="hint" style="margin-top:6px;margin-bottom:0;"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Date scheduled</label><input id="f-date" type="date" value="${job.dateScheduled}"></div>
+        <div class="field"><label>Status</label>
+          <select id="f-status">
+            <option value="quoted" ${job.status==='quoted'?'selected':''}>Quoted</option>
+            <option value="scheduled" ${job.status==='scheduled'?'selected':''}>Scheduled</option>
+            <option value="in_progress" ${job.status==='in_progress'?'selected':''}>In Progress</option>
+            <option value="complete" ${job.status==='complete'?'selected':''}>Complete</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Pricing</div>
+    <div class="card">
+      <div class="row2">
+        <div class="field"><label>Materials cost (£)</label><input id="f-materials" type="number" step="0.01" inputmode="decimal" value="${job.materialsCostEst}" placeholder="250"></div>
+        <div class="field"><label>Markup (%)</label><input id="f-markup" type="number" step="1" inputmode="decimal" value="${job.markup}"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Labour Charge (£)</label><input id="f-dayrate" type="number" step="1" inputmode="decimal" value="${job.dayRate}"></div>
+        <div class="field"><label>Estimated days</label><input id="f-days" type="number" step="0.5" inputmode="decimal" value="${job.estDays}" placeholder="2"></div>
+      </div>
+      <div class="field"><label>Insurance / contingency (£)</label><input id="f-insurance" type="number" step="1" inputmode="decimal" value="${job.insurance}"></div>
+      <div class="kv"><span class="k">Calculated subtotal</span><span class="v" id="f-subtotal">£0.00</span></div>
+      <div class="field" style="margin-top:10px;"><label>Final quoted price (£) — round up as you like</label><input id="f-quoted" type="number" step="1" inputmode="decimal" value="${job.quotedTotal}" placeholder="e.g. 1100"></div>
+      <div class="hint">Subtotal auto-fills the quoted price until you edit it yourself.</div>
+    </div>
+
+    <div class="section-title">Notes</div>
+    <div class="card">
+      <textarea id="f-notes" placeholder="Access, parking, anything to remember...">${escapeHtml(job.notes||'')}</textarea>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+      <button class="btn" id="saveBtn">Save Job</button>
+    </div>
+    ${state.editingJob ? '<button class="btn btn-danger" id="deleteBtn" style="margin-top:10px;">Delete Job</button>' : ''}
+  `;
+
+  function recalcSubtotal(){
+    const q = {
+      materialsCostEst: document.getElementById('f-materials').value,
+      markup: document.getElementById('f-markup').value,
+      dayRate: document.getElementById('f-dayrate').value,
+      estDays: document.getElementById('f-days').value,
+      insurance: document.getElementById('f-insurance').value,
+    };
+    const { subtotal } = calcQuote(q);
+    document.getElementById('f-subtotal').textContent = money(subtotal);
+    const quotedField = document.getElementById('f-quoted');
+    if(!quotedField.dataset.touched){
+      quotedField.value = subtotal ? Math.round(subtotal) : '';
+    }
+  }
+  ['f-materials','f-markup','f-dayrate','f-days','f-insurance'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', recalcSubtotal);
+  });
+  document.getElementById('f-quoted').addEventListener('input', (e)=>{ e.target.dataset.touched = '1'; });
+  if(job.quotedTotal) document.getElementById('f-quoted').dataset.touched = '1';
+  recalcSubtotal();
+
+  wireAddressAutocomplete();
+
+  document.getElementById('cancelBtn').onclick = ()=>{
+    state.view = state.editingJob ? 'jobDetail' : 'dashboard';
+    state.jobId = state.editingJob ? state.editingJob.id : null;
+    render();
+  };
+
+  document.getElementById('saveBtn').onclick = ()=>{
+    const clientName = document.getElementById('f-clientname').value.trim();
+    if(!clientName){ alert('Give the client a name first.'); return; }
+    const updated = Object.assign({}, job, {
+      clientName,
+      jobTitle: document.getElementById('f-jobtitle').value.trim(),
+      address: document.getElementById('f-address').value.trim(),
+      dateScheduled: document.getElementById('f-date').value,
+      status: document.getElementById('f-status').value,
+      materialsCostEst: document.getElementById('f-materials').value,
+      markup: document.getElementById('f-markup').value,
+      dayRate: document.getElementById('f-dayrate').value,
+      estDays: document.getElementById('f-days').value,
+      insurance: document.getElementById('f-insurance').value,
+      quotedTotal: document.getElementById('f-quoted').value,
+      notes: document.getElementById('f-notes').value,
+    });
+    const jobs = loadJobs();
+    const idx = jobs.findIndex(j=>j.id===updated.id);
+    if(idx>=0) jobs[idx]=updated; else jobs.push(updated);
+    saveJobs(jobs);
+    state.view='jobDetail'; state.jobId=updated.id; state.editingJob=null;
+    render();
+  };
+
+  const delBtn = document.getElementById('deleteBtn');
+  if(delBtn){
+    delBtn.onclick = ()=>{
+      showConfirm({
+        title: 'Delete job?',
+        message: 'Delete this job and all its logs? This cannot be undone.',
+        confirmLabel: 'Delete job',
+        onConfirm: ()=>{
+          let jobs = loadJobs().filter(j=>j.id!==job.id);
+          saveJobs(jobs);
+          state.view='dashboard'; state.jobId=null; state.editingJob=null;
+          render();
+        }
+      });
+    };
+  }
+}
+
+function renderJobDetail(app, job){
+  const settings = loadSettings();
+  const { materialsPrice, labourPrice, subtotal } = calcQuote(job);
+  const quotedTotal = Number(job.quotedTotal)||subtotal;
+  const a = calcActuals(job, settings);
+  const logs = (job.logs||[]).slice().sort((x,y)=> y.date.localeCompare(x.date));
+  const todayLog = (job.logs||[]).find(l=>l.date===todayStr());
+
+  let quickActionHtml = '';
+  if(!todayLog){
+    quickActionHtml = `<button class="btn btn-good" id="leaveBtn">Leaving now (${nowTimeStr()})</button>`;
+  } else if(!todayLog.home){
+    quickActionHtml = `<div class="hint" style="margin-top:0;">Left today at ${todayLog.leave}</div><button class="btn btn-good" id="homeBtn">Home now (${nowTimeStr()})</button>`;
+  } else {
+    quickActionHtml = `<div class="hint" style="margin-top:0;">Today logged: ${todayLog.leave} – ${todayLog.home} (${hoursBetween(todayLog.leave,todayLog.home).toFixed(1)} hrs)</div>`;
+  }
+
+  let effHourlyCls = 'bad';
+  if(a.effectiveHourly !== null){
+    if(a.effectiveHourly >= a.targetHourly) effHourlyCls = 'good';
+    else if(a.effectiveHourly >= 30) effHourlyCls = 'amber';
+  }
+  const effHourlyHtml = a.effectiveHourly === null
+    ? `<div class="stat"><div class="label">Effective £/hr</div><div class="value">—</div></div>`
+    : `<div class="stat"><div class="label">Effective £/hr</div><div class="value ${effHourlyCls}">${money(a.effectiveHourly)}</div></div>`;
+
+  const priceForTargetHtml = a.priceForTargetHourly === null
+    ? `<div class="stat"><div class="label">Price needed for ${money(settings.targetHourlyRate)}/hr</div><div class="value">—</div></div>`
+    : `<div class="stat"><div class="label">Price needed for ${money(settings.targetHourlyRate)}/hr</div><div class="value">${money(a.priceForTargetHourly)}</div></div>`;
+
+  app.innerHTML = `
+    <div class="card">
+      <div class="job-top">
+        <div>
+          <div class="job-meta">${escapeHtml(job.address||'')}</div>
+          <div class="job-meta">${job.dateScheduled ? fmtDate(job.dateScheduled) : ''}</div>
+        </div>
+        <span class="badge badge-${job.status}">${statusLabel(job.status)}</span>
+      </div>
+      ${job.notes ? `<div class="job-meta" style="margin-top:8px;">${escapeHtml(job.notes)}</div>` : ''}
+      <button class="btn btn-secondary" id="editJobBtn" style="margin-top:12px;">Edit job details</button>
+    </div>
+
+    <div class="section-title">Quote Breakdown</div>
+    <div class="card">
+      <div class="kv"><span class="k">Materials (+${job.markup||0}% markup)</span><span class="v">${money(materialsPrice)}</span></div>
+      <div class="kv"><span class="k">Labour (${job.dayRate?money(job.dayRate):'£0'} × ${job.estDays||0} days)</span><span class="v">${money(labourPrice)}</span></div>
+      <div class="kv"><span class="k">Insurance / contingency</span><span class="v">${money(job.insurance)}</span></div>
+      <div class="kv total"><span class="k">Quoted total</span><span class="v">${money(quotedTotal)}</span></div>
+    </div>
+
+    <div class="section-title">Today</div>
+    <div class="card">${quickActionHtml}</div>
+
+    <div class="section-title">Time Logs</div>
+    <div class="card">
+      <div id="logList">${logs.length===0 ? '<div class="hint" style="margin:0;">No time logged yet.</div>' : logs.map(l=>logRowHtml(l)).join('')}</div>
+      <button class="btn btn-secondary" id="addLogBtn" style="margin-top:10px;">+ Add / backfill a day</button>
+    </div>
+
+    <div class="section-title">Actual Materials</div>
+    <div class="card">
+      <div id="matList">${(job.materialLines||[]).length===0 ? '<div class="hint" style="margin:0;">No materials logged yet.</div>' : job.materialLines.map(m=>matRowHtml(m)).join('')}</div>
+      <button class="btn btn-secondary" id="addMatBtn" style="margin-top:10px;">+ Add material cost</button>
+    </div>
+
+    <div class="section-title">Profitability</div>
+    <div class="card">
+      <div class="stat-grid" style="margin-bottom:10px;">
+        <div class="stat"><div class="label">Hours worked</div><div class="value">${a.totalHours.toFixed(1)}</div></div>
+        <div class="stat"><div class="label">Miles driven</div><div class="value">${a.totalMiles}</div></div>
+        <div class="stat"><div class="label">Fuel cost</div><div class="value">${money(a.fuelCost)}</div></div>
+        <div class="stat"><div class="label">Actual materials</div><div class="value">${money(a.actualMaterials)}</div></div>
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>Commute time (each way, mins) — deducted from hours worked</label>
+        <input id="commuteMinutesInput" type="number" step="1" inputmode="numeric" value="${a.commuteMinutesEachWay}">
+      </div>
+      <div class="kv"><span class="k">Billable hours (${a.totalHours.toFixed(1)}h − ${a.commuteHoursDeducted.toFixed(1)}h commute)</span><span class="v">${a.billableHours.toFixed(1)}</span></div>
+      <div class="kv"><span class="k">Quoted total</span><span class="v">${money(quotedTotal)}</span></div>
+      <div class="kv"><span class="k">− Actual materials &amp; fuel</span><span class="v">${money(a.totalActualCost)}</span></div>
+      <div class="kv total"><span class="k">Gross profit</span><span class="v" style="color:${a.grossProfit>=0?'var(--good)':'var(--bad)'}">${money(a.grossProfit)}</span></div>
+      <div class="stat-grid" style="margin-top:12px;">
+        ${effHourlyHtml}
+        <div class="stat"><div class="label">Target £/hr (Labour Charge)</div><div class="value">${money(a.targetHourly)}</div></div>
+        ${priceForTargetHtml}
+      </div>
+      ${a.effectiveHourly !== null ? `<div class="hint" style="margin-top:10px;">${a.effectiveHourly >= a.targetHourly ? 'Ran above your target rate — good margin.' : 'Ran below your target rate of '+money(a.targetHourly)+'/hr — this job took longer or cost more than priced for.'}</div>` : ''}
+    </div>
+  `;
+
+  document.getElementById('editJobBtn').onclick = ()=>{ state.editingJob = job; state.view='jobForm'; render(); };
+
+  document.getElementById('commuteMinutesInput').addEventListener('change', (e)=>{
+    const jobs = loadJobs();
+    const jj = jobs.find(j=>j.id===job.id);
+    jj.commuteMinutes = e.target.value;
+    saveJobs(jobs);
+    render();
+  });
+
+  const leaveBtn = document.getElementById('leaveBtn');
+  if(leaveBtn) leaveBtn.onclick = ()=>{
+    const jobs = loadJobs();
+    const jj = jobs.find(j=>j.id===job.id);
+    jj.logs = jj.logs || [];
+    jj.logs.push({id:uid(), date:todayStr(), leave:nowTimeStr(), home:'', miles:''});
+    if(jj.status === 'scheduled' || jj.status==='quoted') jj.status='in_progress';
+    saveJobs(jobs);
+    render();
+  };
+  const homeBtn = document.getElementById('homeBtn');
+  if(homeBtn) homeBtn.onclick = async ()=>{
+    const estimatedMiles = await getEstimatedRoundTripMiles(job);
+    showModal({
+      title: 'Home now',
+      fields: [{id:'miles', label: estimatedMiles != null ? 'Miles driven today (auto-calculated, edit if needed)' : 'Miles driven today (round trip)', type:'number', value: estimatedMiles != null ? estimatedMiles : '0'}],
+      onSave: (vals)=>{
+        const jobs = loadJobs();
+        const jj = jobs.find(j=>j.id===job.id);
+        const log = jj.logs.find(l=>l.date===todayStr());
+        log.home = nowTimeStr();
+        log.miles = vals.miles;
+        saveJobs(jobs);
+        render();
+      }
+    });
+  };
+
+  document.getElementById('addLogBtn').onclick = async ()=>{
+    const estimatedMiles = await getEstimatedRoundTripMiles(job);
+    openLogEditor(job, null, estimatedMiles);
+  };
+  document.querySelectorAll('.log-row').forEach(row=>{
+    row.addEventListener('click', (e)=>{
+      if(e.target.classList.contains('icon-x')) return;
+      const logId = row.dataset.id;
+      const log = job.logs.find(l=>l.id===logId);
+      openLogEditor(job, log);
+    });
+  });
+  document.querySelectorAll('.log-row .icon-x').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const logId = btn.closest('.log-row').dataset.id;
+      showConfirm({
+        title: 'Delete log entry?',
+        message: 'Delete this log entry?',
+        confirmLabel: 'Delete',
+        onConfirm: ()=>{
+          const jobs = loadJobs();
+          const jj = jobs.find(j=>j.id===job.id);
+          jj.logs = jj.logs.filter(l=>l.id!==logId);
+          saveJobs(jobs);
+          render();
+        }
+      });
+    });
+  });
+
+  document.getElementById('addMatBtn').onclick = ()=> openMaterialEditor(job);
+  document.querySelectorAll('.mat-row .icon-x').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const matId = btn.closest('.mat-row').dataset.id;
+      showConfirm({
+        title: 'Delete material cost?',
+        message: 'Delete this material cost?',
+        confirmLabel: 'Delete',
+        onConfirm: ()=>{
+          const jobs = loadJobs();
+          const jj = jobs.find(j=>j.id===job.id);
+          jj.materialLines = jj.materialLines.filter(m=>m.id!==matId);
+          saveJobs(jobs);
+          render();
+        }
+      });
+    });
+  });
+}
+
+function logRowHtml(l){
+  const hrs = hoursBetween(l.leave, l.home);
+  return `<div class="log-row" data-id="${l.id}">
+    <div class="log-left">
+      <div class="date">${fmtDate(l.date)}</div>
+      <div class="times">${l.leave||'--:--'} – ${l.home||'--:--'}${l.miles ? ' · '+l.miles+' mi' : ''}</div>
+    </div>
+    <div class="log-right">
+      <span class="hrs">${l.home ? hrs.toFixed(1)+'h' : 'open'}</span>
+      <button class="icon-x">&times;</button>
+    </div>
+  </div>`;
+}
+function matRowHtml(m){
+  return `<div class="mat-row" data-id="${m.id}">
+    <span class="desc">${escapeHtml(m.desc||'Materials')}</span>
+    <span class="cost">${money(m.cost)}</span>
+    <button class="icon-x">&times;</button>
+  </div>`;
+}
+
+function openLogEditor(job, existing, defaultMiles){
+  showModal({
+    title: existing ? 'Edit day' : 'Add / backfill a day',
+    fields: [
+      {id:'date', label:'Date', type:'date', value: existing ? existing.date : todayStr()},
+      {id:'leave', label:'Left home time', type:'time', value: existing ? existing.leave : '07:30'},
+      {id:'home', label:'Home time (leave blank if still out)', type:'time', value: existing ? existing.home : ''},
+      {id:'miles', label: (!existing && defaultMiles != null) ? 'Miles driven (auto-calculated, edit if needed)' : 'Miles driven (round trip)', type:'number', value: existing ? existing.miles : (defaultMiles != null ? defaultMiles : '0')},
+    ],
+    onSave: (vals)=>{
+      const jobs = loadJobs();
+      const jj = jobs.find(j=>j.id===job.id);
+      jj.logs = jj.logs || [];
+      if(existing){
+        const log = jj.logs.find(l=>l.id===existing.id);
+        Object.assign(log, vals);
+      } else {
+        jj.logs.push(Object.assign({id:uid()}, vals));
+      }
+      saveJobs(jobs);
+      render();
+    }
+  });
+}
+
+function openMaterialEditor(job){
+  showModal({
+    title: 'Add material cost',
+    fields: [
+      {id:'desc', label:'What did you buy?', type:'text', value:''},
+      {id:'cost', label:'Cost (£)', type:'number', value:'0'},
+    ],
+    onSave: (vals)=>{
+      const jobs = loadJobs();
+      const jj = jobs.find(j=>j.id===job.id);
+      jj.materialLines = jj.materialLines || [];
+      jj.materialLines.push(Object.assign({id:uid()}, vals));
+      saveJobs(jobs);
+      render();
+    }
+  });
+}
+
+let googleMapsLoadPromise = null;
+let googleMapsLoadedKey = null;
+function loadGoogleMaps(apiKey){
+  if(googleMapsLoadedKey === apiKey && googleMapsLoadPromise) return googleMapsLoadPromise;
+  googleMapsLoadedKey = apiKey;
+  googleMapsLoadPromise = new Promise((resolve, reject)=>{
+    const existing = document.getElementById('google-maps-script');
+    if(existing) existing.remove();
+    window.__onGoogleMapsLoaded = ()=> resolve(window.google);
+    const script = document.createElement('script');
+    script.id = 'google-maps-script';
+    script.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(apiKey) + '&libraries=places&loading=async&callback=__onGoogleMapsLoaded';
+    script.async = true;
+    script.onerror = ()=> reject(new Error('load failed'));
+    document.head.appendChild(script);
+  });
+  return googleMapsLoadPromise;
+}
+
+function debounce(fn, wait){
+  let t;
+  return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), wait); };
+}
+
+async function calculateOneWayMiles(fromAddress, toAddress, apiKey){
+  await loadGoogleMaps(apiKey);
+  const { DistanceMatrixService } = await google.maps.importLibrary('routes');
+  const service = new DistanceMatrixService();
+  return new Promise((resolve, reject)=>{
+    service.getDistanceMatrix({
+      origins: [fromAddress],
+      destinations: [toAddress],
+      travelMode: google.maps.TravelMode.DRIVING,
+    }, (response, status)=>{
+      if(status !== 'OK'){ reject(new Error(status)); return; }
+      const el = response.rows[0] && response.rows[0].elements[0];
+      if(!el || el.status !== 'OK'){ reject(new Error(el ? el.status : 'NO_ROUTE')); return; }
+      resolve(el.distance.value / 1609.344);
+    });
+  });
+}
+
+async function getEstimatedRoundTripMiles(job){
+  const settings = loadSettings();
+  if(!settings.homeBaseAddress || !settings.googleApiKey || !job.address) return null;
+  if(job.calculatedMiles != null && job.calculatedMilesForAddress === job.address){
+    return job.calculatedMiles;
+  }
+  try{
+    const oneWay = await calculateOneWayMiles(settings.homeBaseAddress, job.address, settings.googleApiKey);
+    const roundTrip = Math.round(oneWay * 2 * 10) / 10;
+    const jobs = loadJobs();
+    const jj = jobs.find(j=>j.id===job.id);
+    if(jj){
+      jj.calculatedMiles = roundTrip;
+      jj.calculatedMilesForAddress = job.address;
+      saveJobs(jobs);
+    }
+    return roundTrip;
+  }catch(e){
+    return null;
+  }
+}
+
+async function wireAddressAutocomplete(inputId, listId, hintId){
+  inputId = inputId || 'f-address';
+  listId = listId || 'f-address-list';
+  hintId = hintId || 'f-address-hint';
+  const input = document.getElementById(inputId);
+  const list = document.getElementById(listId);
+  const hint = document.getElementById(hintId);
+  if(!input || !list) return;
+  const settings = loadSettings();
+
+  if(!settings.googleApiKey){
+    if(hint) hint.textContent = 'Add a Google Maps API key in Settings to search for addresses and place names.';
+    return;
+  }
+
+  function hideList(){ list.classList.add('hidden'); list.innerHTML=''; }
+  function showSuggestions(suggestions){
+    if(suggestions.length === 0){ hideList(); return; }
+    list.innerHTML = suggestions.map(s=>`<div class="autocomplete-item">${escapeHtml(s.placePrediction.text.text)}</div>`).join('');
+    list.classList.remove('hidden');
+    list.querySelectorAll('.autocomplete-item').forEach((el,i)=>{
+      el.addEventListener('mousedown', async (e)=>{
+        e.preventDefault();
+        const prediction = suggestions[i].placePrediction;
+        input.value = prediction.text.text;
+        hideList();
+        try{
+          const place = prediction.toPlace();
+          await place.fetchFields({ fields: ['formattedAddress'] });
+          if(place.formattedAddress) input.value = place.formattedAddress;
+        }catch(err){ /* keep the prediction text already filled in */ }
+      });
+    });
+  }
+
+  let AutocompleteSuggestion;
+  try{
+    await loadGoogleMaps(settings.googleApiKey);
+    ({ AutocompleteSuggestion } = await google.maps.importLibrary('places'));
+    if(hint) hint.textContent = '';
+  }catch(e){
+    if(hint) hint.textContent = 'Could not load Google Maps search — check your API key in Settings.';
+    return;
+  }
+
+  const debouncedSearch = debounce(async ()=>{
+    const q = input.value.trim();
+    if(q.length < 3){ hideList(); return; }
+    try{
+      const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+        input: q,
+        includedRegionCodes: ['gb']
+      });
+      if(document.activeElement !== input) return;
+      if(hint) hint.textContent = '';
+      showSuggestions(suggestions || []);
+    }catch(err){
+      hideList();
+      if(hint) hint.textContent = 'Could not fetch suggestions — check your API key and billing in Settings.';
+    }
+  }, 450);
+
+  input.addEventListener('input', debouncedSearch);
+  input.addEventListener('blur', ()=> setTimeout(hideList, 150));
+}
+
+function showModal({title, fields, onSave}){
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-sheet">
+        <h2>${escapeHtml(title)}</h2>
+        ${fields.map(f=>`
+          <div class="field">
+            <label>${escapeHtml(f.label)}</label>
+            <input id="modal-${f.id}" type="${f.type}" value="${escapeHtml(String(f.value ?? ''))}" ${f.type==='number' ? 'step="any" inputmode="decimal"' : ''}>
+          </div>
+        `).join('')}
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="modalCancel">Cancel</button>
+          <button class="btn" id="modalSave">Save</button>
+        </div>
+      </div>
+    </div>
+  `;
+  const overlay = document.getElementById('modalOverlay');
+  const close = ()=>{ root.innerHTML = ''; };
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) close(); });
+  document.getElementById('modalCancel').onclick = close;
+  document.getElementById('modalSave').onclick = ()=>{
+    const vals = {};
+    fields.forEach(f=>{ vals[f.id] = document.getElementById('modal-'+f.id).value; });
+    close();
+    onSave(vals);
+  };
+}
+
+function showConfirm({title, message, confirmLabel, onConfirm}){
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-sheet">
+        <h2>${escapeHtml(title || 'Are you sure?')}</h2>
+        <p style="color:var(--text-dim);font-size:14.5px;margin:0 0 18px;">${escapeHtml(message || '')}</p>
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="modalCancel">Cancel</button>
+          <button class="btn btn-danger" id="modalConfirm">${escapeHtml(confirmLabel || 'Delete')}</button>
+        </div>
+      </div>
+    </div>
+  `;
+  const overlay = document.getElementById('modalOverlay');
+  const close = ()=>{ root.innerHTML = ''; };
+  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) close(); });
+  document.getElementById('modalCancel').onclick = close;
+  document.getElementById('modalConfirm').onclick = ()=>{
+    close();
+    onConfirm();
+  };
+}
+
+function renderSettings(app){
+  const s = loadSettings();
+  app.innerHTML = `
+    <div class="section-title">Defaults used on new quotes</div>
+    <div class="card">
+      <div class="field"><label>Labour Charge (£)</label><input id="s-dayrate" type="number" value="${s.dayRate}"></div>
+      <div class="field"><label>Hours per working day</label><input id="s-hours" type="number" value="${s.hoursPerDay}"></div>
+      <div class="field"><label>Mileage rate (£ per mile)</label><input id="s-mileage" type="number" step="0.01" value="${s.mileageRate}"></div>
+      <div class="field"><label>Default materials markup (%)</label><input id="s-markup" type="number" value="${s.markup}"></div>
+      <div class="field"><label>Default insurance / contingency (£)</label><input id="s-insurance" type="number" value="${s.insurance}"></div>
+      <div class="field"><label>Desired hourly rate for pricing checks (£)</label><input id="s-targethourly" type="number" step="0.01" value="${s.targetHourlyRate}"></div>
+      <button class="btn" id="saveSettingsBtn">Save Settings</button>
+    </div>
+
+    <div class="section-title">Address search</div>
+    <div class="card">
+      <div class="field">
+        <label>Google Maps API key</label>
+        <input id="s-googlekey" value="${escapeHtml(s.googleApiKey||'')}" placeholder="Paste your API key here">
+      </div>
+      <div class="hint" style="margin-bottom:0;">
+        Powers the address/place search when adding a job. Get a key at
+        <a href="https://console.cloud.google.com/google/maps-apis/credentials" target="_blank" rel="noopener">console.cloud.google.com</a>
+        — create a project, enable "Places API (New)", then create an API key. Google requires a billing account but gives $200/month free credit, which comfortably covers normal one-person use.
+      </div>
+      <button class="btn" id="saveSettingsBtn2" style="margin-top:14px;">Save Settings</button>
+    </div>
+
+    <div class="section-title">Mileage auto-calc</div>
+    <div class="card">
+      <div class="field autocomplete">
+        <label>Home / workshop address</label>
+        <input id="s-homebase" value="${escapeHtml(s.homeBaseAddress||'')}" placeholder="Start typing an address or postcode..." autocomplete="off">
+        <div id="s-homebase-list" class="autocomplete-list hidden"></div>
+        <div id="s-homebase-hint" class="hint" style="margin-top:6px;margin-bottom:0;"></div>
+      </div>
+      <div class="hint" style="margin-top:14px;margin-bottom:0;">
+        Used as the starting point to auto-calculate round-trip mileage to each job. Also needs "Distance Matrix API" enabled in the same Google Cloud project as your API key above.
+      </div>
+      <button class="btn" id="saveSettingsBtn3" style="margin-top:14px;">Save Settings</button>
+    </div>
+
+    <div class="section-title">Account</div>
+    <div class="card">
+      <div class="hint" style="margin-top:0;">Signed in as ${escapeHtml((window.__fbAuth && window.__fbAuth.currentUser && window.__fbAuth.currentUser.email) || '—')}</div>
+      <button class="btn btn-secondary" id="logoutBtn">Log out</button>
+      <button class="btn btn-danger" id="disconnectFbBtn" style="margin-top:10px;">Disconnect this Firebase project</button>
+    </div>
+    <div class="hint" style="text-align:center;">Your jobs and settings are stored in your own private Firebase project, not shared with anyone.</div>
+  `;
+  const doSave = ()=>{
+    const updated = {
+      dayRate: Number(document.getElementById('s-dayrate').value)||0,
+      hoursPerDay: Number(document.getElementById('s-hours').value)||8,
+      mileageRate: Number(document.getElementById('s-mileage').value)||0,
+      markup: Number(document.getElementById('s-markup').value)||0,
+      insurance: Number(document.getElementById('s-insurance').value)||0,
+      targetHourlyRate: Number(document.getElementById('s-targethourly').value)||0,
+      googleApiKey: document.getElementById('s-googlekey').value.trim(),
+      homeBaseAddress: document.getElementById('s-homebase').value.trim(),
+    };
+    saveSettings(updated);
+    state.view='dashboard';
+    render();
+  };
+  document.getElementById('saveSettingsBtn').onclick = doSave;
+  document.getElementById('saveSettingsBtn2').onclick = doSave;
+  document.getElementById('saveSettingsBtn3').onclick = doSave;
+  wireAddressAutocomplete('s-homebase', 's-homebase-list', 's-homebase-hint');
+
+  document.getElementById('logoutBtn').onclick = ()=>{
+    if(window.fbSignOut) window.fbSignOut();
+  };
+  document.getElementById('disconnectFbBtn').onclick = ()=>{
+    showConfirm({
+      title: 'Disconnect this Firebase project?',
+      message: 'This forgets the connected project on this device and signs you out. Your data stays safe in Firebase — you can reconnect any time with the same project config.',
+      confirmLabel: 'Disconnect',
+      onConfirm: ()=>{
+        if(window.fbSignOut) window.fbSignOut();
+        localStorage.removeItem(STORAGE_FB_CONFIG);
+        window.location.reload();
+      }
+    });
+  };
+}
+
+function renderFirebaseSetup(app){
+  app.innerHTML = `
+    <div class="card">
+      <div class="hint" style="margin-top:0;">
+        Paste the <code>firebaseConfig</code> object from your Firebase project's
+        <a href="https://console.firebase.google.com" target="_blank" rel="noopener">Project settings</a>
+        (the whole block starting with <code>{</code>, including <code>apiKey</code>, <code>projectId</code>, etc).
+      </div>
+      <div class="field">
+        <label>Firebase config</label>
+        <textarea id="fbConfigInput" style="min-height:140px;font-family:monospace;font-size:13px;" placeholder='{
+  apiKey: "...",
+  authDomain: "...",
+  projectId: "...",
+  ...
+}'></textarea>
+      </div>
+      <div id="fbSetupError" class="hint" style="color:var(--bad);margin-bottom:0;"></div>
+      <button class="btn" id="fbConnectBtn" style="margin-top:10px;">Connect</button>
+    </div>
+  `;
+  document.getElementById('fbConnectBtn').onclick = ()=>{
+    const raw = document.getElementById('fbConfigInput').value.trim();
+    const errEl = document.getElementById('fbSetupError');
+    errEl.textContent = '';
+    if(!raw){ errEl.textContent = 'Paste your Firebase config first.'; return; }
+    let config;
+    try{
+      config = new Function('return (' + raw + ')')();
+    }catch(e){
+      errEl.textContent = 'Could not read that — make sure you pasted the whole config object.';
+      return;
+    }
+    if(!config || !config.apiKey || !config.projectId){
+      errEl.textContent = 'That does not look like a complete config — it should include apiKey and projectId.';
+      return;
+    }
+    if(typeof window.fbInit !== 'function'){
+      errEl.textContent = 'Still loading — wait a second and tap Connect again.';
+      return;
+    }
+    localStorage.setItem(STORAGE_FB_CONFIG, JSON.stringify(config));
+    window.fbInit(config);
+  };
+}
+
+function renderAuthScreen(app){
+  const mode = state.authMode || 'login';
+  app.innerHTML = `
+    <div class="card">
+      <div class="field"><label>Email</label><input id="authEmail" type="email" autocomplete="username"></div>
+      <div class="field"><label>Password</label><input id="authPassword" type="password" autocomplete="${mode==='login'?'current-password':'new-password'}"></div>
+      <div id="authError" class="hint" style="color:var(--bad);margin-bottom:0;"></div>
+      <button class="btn" id="authSubmitBtn" style="margin-top:10px;">${mode==='login' ? 'Log In' : 'Create Account'}</button>
+      <button class="btn btn-secondary" id="authToggleBtn" style="margin-top:10px;">${mode==='login' ? "New here? Create an account" : 'Already have an account? Log in'}</button>
+    </div>
+    <button class="cal-today-btn" id="authDisconnectBtn">Wrong Firebase project? Disconnect</button>
+  `;
+  document.getElementById('authToggleBtn').onclick = ()=>{
+    state.authMode = mode === 'login' ? 'signup' : 'login';
+    render();
+  };
+  document.getElementById('authDisconnectBtn').onclick = ()=>{
+    localStorage.removeItem(STORAGE_FB_CONFIG);
+    window.location.reload();
+  };
+  document.getElementById('authSubmitBtn').onclick = ()=>{
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    const errEl = document.getElementById('authError');
+    errEl.textContent = '';
+    if(!email || !password){ errEl.textContent = 'Enter your email and password.'; return; }
+    const action = mode === 'login' ? window.fbSignIn : window.fbSignUp;
+    action(email, password).catch(err=>{
+      errEl.textContent = (err && err.message) ? err.message.replace(/^Firebase:\s*/,'') : 'Something went wrong — try again.';
+    });
+  };
+}
+
+document.getElementById('fabAddJob').onclick = ()=>{ state.editingJob=null; state.view='jobForm'; render(); };
+document.getElementById('settingsBtn').onclick = ()=>{ state.view='settings'; render(); };
+
+window.showFirebaseSetup = function(){ state.view='fbSetup'; render(); };
+window.onAuthResolved = function(user){
+  if(user){
+    if(state.view === 'fbSetup' || state.view === 'authLogin' || state.view === 'fbLoading') state.view = 'dashboard';
+  } else {
+    state.view = 'authLogin';
+  }
+  render();
+};
+window.onDataUpdated = function(){
+  if(state.view !== 'fbSetup' && state.view !== 'authLogin' && state.view !== 'fbLoading') render();
+};
+
+const storedFbConfig = localStorage.getItem(STORAGE_FB_CONFIG);
+if(!storedFbConfig){
+  render();
+}
+setTimeout(()=>{
+  if(document.getElementById('app').innerHTML.trim() === ''){
+    render();
+  }
+}, 4000);
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, createUserWithEmailAndPassword,
+  signInWithEmailAndPassword, signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  getFirestore, doc, setDoc, onSnapshot, enableIndexedDbPersistence
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+window.fbInit = function(config){
+  let app, auth, db;
+  try{
+    app = initializeApp(config);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  }catch(e){
+    window.showFirebaseSetup();
+    return;
+  }
+  enableIndexedDbPersistence(db).catch(()=>{});
+  window.__fbAuth = auth;
+  window.__fbDb = db;
+  window.fbSignUp = (email, password)=> createUserWithEmailAndPassword(auth, email, password);
+  window.fbSignIn = (email, password)=> signInWithEmailAndPassword(auth, email, password);
+  window.fbSignOut = ()=> signOut(auth);
+
+  let unsubJobs = null, unsubSettings = null;
+  onAuthStateChanged(auth, (user)=>{
+    if(unsubJobs){ unsubJobs(); unsubJobs = null; }
+    if(unsubSettings){ unsubSettings(); unsubSettings = null; }
+    if(user){
+      const jobsRef = doc(db, 'users', user.uid, 'app', 'jobs');
+      const settingsRef = doc(db, 'users', user.uid, 'app', 'settings');
+      unsubJobs = onSnapshot(jobsRef, (snap)=>{
+        const needsMigrationCheck = !snap.exists() && !window.__migrationOffered;
+        window.__cachedJobs = snap.exists() ? (snap.data().list || []) : [];
+        window.onDataUpdated();
+        if(needsMigrationCheck){
+          window.__migrationOffered = true;
+          const legacyJobsRaw = localStorage.getItem('jpt_jobs');
+          let legacyJobs = null;
+          try{ legacyJobs = legacyJobsRaw ? JSON.parse(legacyJobsRaw) : null; }catch(e){}
+          if(Array.isArray(legacyJobs) && legacyJobs.length > 0){
+            setTimeout(()=>{
+              window.showConfirm({
+                title: 'Import existing data?',
+                message: 'Found ' + legacyJobs.length + ' job(s) saved on this device from before cloud storage. Import them into your account now?',
+                confirmLabel: 'Import',
+                onConfirm: ()=>{
+                  setDoc(jobsRef, { list: legacyJobs });
+                  const legacySettingsRaw = localStorage.getItem('jpt_settings');
+                  if(legacySettingsRaw){
+                    try{ setDoc(settingsRef, JSON.parse(legacySettingsRaw)); }catch(e){}
+                  }
+                }
+              });
+            }, 0);
+          }
+        }
+      });
+      unsubSettings = onSnapshot(settingsRef, (snap)=>{
+        window.__cachedSettings = snap.exists() ? snap.data() : {};
+        window.onDataUpdated();
+      });
+      window.fbSaveJobs = (jobs)=> setDoc(jobsRef, { list: jobs });
+      window.fbSaveSettings = (s)=> setDoc(settingsRef, s);
+    } else {
+      window.fbSaveJobs = null;
+      window.fbSaveSettings = null;
+    }
+    window.onAuthResolved(user);
+  });
+};
+
+const storedConfigRaw = localStorage.getItem('jpt_fb_config');
+if(storedConfigRaw){
+  try{
+    window.fbInit(JSON.parse(storedConfigRaw));
+  }catch(e){
+    window.showFirebaseSetup();
+  }
+} else if(window.EMBEDDED_FB_CONFIG){
+  window.fbInit(window.EMBEDDED_FB_CONFIG);
+} else {
+  window.showFirebaseSetup();
+}
+</script>
+</body>
+</html>
