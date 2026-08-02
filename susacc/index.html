@@ -310,6 +310,9 @@ function render(){
   fab.classList.add('hidden');
   headerLeft.innerHTML = '';
 
+  const preAuthViews = ['fbLoading', 'fbSetup', 'authLogin'];
+  document.getElementById('settingsBtn').classList.toggle('hidden', preAuthViews.includes(state.view));
+
   if(state.view === 'fbLoading'){
     title.textContent = 'Job Profit Tracker';
     headerLeft.appendChild(title);
