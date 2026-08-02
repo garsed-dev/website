@@ -416,8 +416,12 @@ function renderDashboard(app){
 
   const jobsByDate = {};
   jobs.forEach(job=>{
-    if(!job.dateScheduled) return;
-    (jobsByDate[job.dateScheduled] = jobsByDate[job.dateScheduled] || []).push(job);
+    const dates = new Set();
+    if(job.dateScheduled) dates.add(job.dateScheduled);
+    (job.logs||[]).forEach(l=>{ if(l.date) dates.add(l.date); });
+    dates.forEach(d=>{
+      (jobsByDate[d] = jobsByDate[d] || []).push(job);
+    });
   });
 
   const firstOfMonth = new Date(year, month, 1);
