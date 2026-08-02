@@ -448,7 +448,7 @@ function renderDashboard(app){
         <div class="cal-events">
           ${visible.map(job=>{
             const li = jobLabelInfo(job.label) || { bg:'#3a3f47', color:'#c7ced8' };
-            return `<div class="cal-event" style="background:${li.bg};color:${li.color};" data-job-id="${job.id}">${escapeHtml(displayName(job))}</div>`;
+            return `<div class="cal-event" style="background:${li.bg};color:${li.color};" data-job-id="${job.id}">${escapeHtml(job.jobTitle || job.clientName || job.name || 'Job')}</div>`;
           }).join('')}
           ${overflow > 0 ? `<div class="cal-event-more" data-date="${cellDateStr}">+${overflow} more</div>` : ''}
         </div>
